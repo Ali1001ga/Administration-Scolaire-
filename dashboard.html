@@ -6,17 +6,12 @@
     <title>School Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <style>
-        .sidebar { height: 100vh; background-color: #343a40; color: white; min-height: 100vh; overflow-y: auto;}
-        .sidebar a { color: white; text-decoration: none; padding: 10px; display: block; }
-        .sidebar a:hover { background-color: #495057; }
-        .content-area { padding: 20px; }
-        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <div id="toast-container"></div>
 
     <div class="d-flex">
         <div class="sidebar p-3" style="width: 250px;">
@@ -115,13 +110,11 @@
 
     <script>
         // --- 1. LOCAL STORAGE & DATA INIT ---
-        // Helper to load data or use default
         function initData(key, defaultData) {
             const stored = localStorage.getItem(key);
             return stored ? JSON.parse(stored) : defaultData;
         }
 
-        // Helper to save all data
         function saveToStorage() {
             localStorage.setItem('students', JSON.stringify(students));
             localStorage.setItem('professors', JSON.stringify(professors));
@@ -130,14 +123,12 @@
             localStorage.setItem('grades', JSON.stringify(grades));
         }
 
-        // Defaults (Mock Data)
         const defaultStudents = [{ id: 1, name: "Alice", email: "alice@ex.com", class: "Math 101" }, { id: 2, name: "Bob", email: "bob@ex.com", class: "Science 202" }];
         const defaultProfs = [{ id: 1, name: "Dr. Smith", dept: "Science", email: "smith@school.com" }, { id: 2, name: "Mrs. Jones", dept: "Math", email: "jones@school.com" }];
         const defaultCourses = [{ id: 101, title: "Algebra", duration: "3 Months", price: "$200" }, { id: 102, title: "Physics", duration: "4 Months", price: "$250" }];
         const defaultRooms = [{ id: 1, name: "Room A1", capacity: 30, location: "Floor 1" }, { id: 2, name: "Lab B2", capacity: 20, location: "Floor 2" }];
         const defaultGrades = [{ id: 1, student: "Alice", course: "Algebra", grade: 18 }, { id: 2, student: "Bob", course: "Physics", grade: 15 }];
 
-        // Initialize variables from Storage OR Defaults
         let students = initData('students', defaultStudents);
         let professors = initData('professors', defaultProfs);
         let courses = initData('courses', defaultCourses);
@@ -147,12 +138,33 @@
         let deleteId = null; let deleteType = null;
         let charts = {}; 
 
-        // --- 2. NAVIGATION ---
+        // --- 2. NOTIFICATIONS (TOASTS) ---
+        function showNotification(message) {
+            const container = document.getElementById('toast-container');
+            
+            // Create the toast element
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = message + " &nbsp; ✅"; // Adds a checkmark
+            
+            container.appendChild(toast);
+
+            // Remove it from the DOM after 3 seconds (when animation ends)
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // --- 3. NAVIGATION (ANIMATED) ---
         function showSection(sectionId) {
             ['dashboard', 'students', 'professors', 'courses', 'classrooms', 'grades'].forEach(id => {
-                document.getElementById(id + '-section').style.display = 'none';
+                const el = document.getElementById(id + '-section');
+                el.style.display = 'none';
+                el.classList.remove('fade-in'); 
             });
-            document.getElementById(sectionId + '-section').style.display = 'block';
+            const activeSection = document.getElementById(sectionId + '-section');
+            activeSection.style.display = 'block';
+            setTimeout(() => { activeSection.classList.add('fade-in'); }, 10);
 
             if(sectionId === 'students') loadStudents();
             if(sectionId === 'professors') loadProfessors();
@@ -162,7 +174,7 @@
             if(sectionId === 'dashboard') updateDashboard();
         }
 
-        // --- 3. LOGOUT ---
+        // --- 4. LOGOUT ---
         function logoutWithDelay() {
             const btn = document.getElementById("confirm-logout-btn");
             btn.innerHTML = "Disconnecting... ⏳"; 
@@ -170,7 +182,7 @@
             setTimeout(() => { window.location.href = 'index.html'; }, 2000);
         }
 
-        // --- 4. DASHBOARD & CHARTS ---
+        // --- 5. DASHBOARD & CHARTS ---
         function updateDashboard() {
             document.getElementById('dash-students').innerText = students.length;
             document.getElementById('dash-profs').innerText = professors.length;
@@ -197,36 +209,36 @@
             charts['polarChart'] = new Chart(document.getElementById('polarChart'), { type: 'polarArea', data: { labels: classrooms.map(c => c.name), datasets: [{ label: 'Capacity', data: classrooms.map(c => c.capacity), backgroundColor: ['#4bc0c0', '#36a2eb', '#ffce56'] }] } });
         }
 
-        // --- 5. CRUD FUNCTIONS (Now with Save to Storage) ---
+        // --- 6. CRUD FUNCTIONS (WITH NOTIFICATIONS) ---
         function loadStudents() { document.getElementById("students-table-body").innerHTML = students.map(s => `<tr><td>${s.id}</td><td>${s.name}</td><td>${s.email}</td><td>${s.class}</td><td><button class="btn btn-sm btn-warning" onclick="openStudentModal(${s.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${s.id}, 'student')">Delete</button></td></tr>`).join(''); }
         function openStudentModal(id) { if(id) { const s=students.find(x=>x.id==id); document.getElementById("studentId").value=s.id; document.getElementById("studentName").value=s.name; document.getElementById("studentEmail").value=s.email; document.getElementById("studentClass").value=s.class; } else { document.getElementById("studentId").value=""; document.getElementById("studentName").value=""; document.getElementById("studentEmail").value=""; document.getElementById("studentClass").value=""; } new bootstrap.Modal(document.getElementById('studentModal')).show(); }
         function saveStudent(e) { e.preventDefault(); const id = document.getElementById("studentId").value; const data = { id: id?parseInt(id):Date.now(), name: document.getElementById("studentName").value, email: document.getElementById("studentEmail").value, class: document.getElementById("studentClass").value }; if(id) students[students.findIndex(x=>x.id==id)]=data; else students.push(data); 
-            saveToStorage(); // SAVE
-            loadStudents(); bootstrap.Modal.getInstance(document.getElementById('studentModal')).hide(); }
+            saveToStorage(); loadStudents(); bootstrap.Modal.getInstance(document.getElementById('studentModal')).hide(); 
+            showNotification("Student Saved Successfully!"); }
 
         function loadProfessors() { document.getElementById("professors-table-body").innerHTML = professors.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.dept}</td><td>${p.email}</td><td><button class="btn btn-sm btn-warning" onclick="openProfessorModal(${p.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${p.id}, 'professor')">Delete</button></td></tr>`).join(''); }
         function openProfessorModal(id) { if(id) { const p=professors.find(x=>x.id==id); document.getElementById("profId").value=p.id; document.getElementById("profName").value=p.name; document.getElementById("profDept").value=p.dept; document.getElementById("profEmail").value=p.email; } else { document.getElementById("profId").value=""; document.getElementById("profName").value=""; document.getElementById("profDept").value=""; document.getElementById("profEmail").value=""; } new bootstrap.Modal(document.getElementById('professorModal')).show(); }
         function saveProfessor(e) { e.preventDefault(); const id = document.getElementById("profId").value; const data = { id: id?parseInt(id):Date.now(), name: document.getElementById("profName").value, dept: document.getElementById("profDept").value, email: document.getElementById("profEmail").value }; if(id) professors[professors.findIndex(x=>x.id==id)]=data; else professors.push(data); 
-            saveToStorage(); // SAVE
-            loadProfessors(); bootstrap.Modal.getInstance(document.getElementById('professorModal')).hide(); }
+            saveToStorage(); loadProfessors(); bootstrap.Modal.getInstance(document.getElementById('professorModal')).hide();
+            showNotification("Professor Saved Successfully!"); }
 
         function loadCourses() { document.getElementById("courses-table-body").innerHTML = courses.map(c => `<tr><td>${c.id}</td><td>${c.title}</td><td>${c.duration}</td><td>${c.price}</td><td><button class="btn btn-sm btn-warning" onclick="openCourseModal(${c.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${c.id}, 'course')">Delete</button></td></tr>`).join(''); }
         function openCourseModal(id) { if(id) { const c=courses.find(x=>x.id==id); document.getElementById("courseId").value=c.id; document.getElementById("courseTitle").value=c.title; document.getElementById("courseDuration").value=c.duration; document.getElementById("coursePrice").value=c.price; } else { document.getElementById("courseId").value=""; document.getElementById("courseTitle").value=""; document.getElementById("courseDuration").value=""; document.getElementById("coursePrice").value=""; } new bootstrap.Modal(document.getElementById('courseModal')).show(); }
         function saveCourse(e) { e.preventDefault(); const id = document.getElementById("courseId").value; const data = { id: id?parseInt(id):Date.now(), title: document.getElementById("courseTitle").value, duration: document.getElementById("courseDuration").value, price: document.getElementById("coursePrice").value }; if(id) courses[courses.findIndex(x=>x.id==id)]=data; else courses.push(data); 
-            saveToStorage(); // SAVE
-            loadCourses(); bootstrap.Modal.getInstance(document.getElementById('courseModal')).hide(); }
+            saveToStorage(); loadCourses(); bootstrap.Modal.getInstance(document.getElementById('courseModal')).hide();
+            showNotification("Course Saved Successfully!"); }
 
         function loadClassrooms() { document.getElementById("classrooms-table-body").innerHTML = classrooms.map(r => `<tr><td>${r.id}</td><td>${r.name}</td><td>${r.capacity}</td><td>${r.location}</td><td><button class="btn btn-sm btn-warning" onclick="openClassModal(${r.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${r.id}, 'classroom')">Delete</button></td></tr>`).join(''); }
         function openClassModal(id) { if(id) { const r=classrooms.find(x=>x.id==id); document.getElementById("classId").value=r.id; document.getElementById("className").value=r.name; document.getElementById("classCapacity").value=r.capacity; document.getElementById("classLoc").value=r.location; } else { document.getElementById("classId").value=""; document.getElementById("className").value=""; document.getElementById("classCapacity").value=""; document.getElementById("classLoc").value=""; } new bootstrap.Modal(document.getElementById('classModal')).show(); }
         function saveClassroom(e) { e.preventDefault(); const id = document.getElementById("classId").value; const data = { id: id?parseInt(id):Date.now(), name: document.getElementById("className").value, capacity: document.getElementById("classCapacity").value, location: document.getElementById("classLoc").value }; if(id) classrooms[classrooms.findIndex(x=>x.id==id)]=data; else classrooms.push(data); 
-            saveToStorage(); // SAVE
-            loadClassrooms(); bootstrap.Modal.getInstance(document.getElementById('classModal')).hide(); }
+            saveToStorage(); loadClassrooms(); bootstrap.Modal.getInstance(document.getElementById('classModal')).hide();
+            showNotification("Classroom Saved Successfully!"); }
 
         function loadGrades() { document.getElementById("grades-table-body").innerHTML = grades.map(g => `<tr><td>${g.id}</td><td>${g.student}</td><td>${g.course}</td><td>${g.grade}</td><td><button class="btn btn-sm btn-warning" onclick="openGradeModal(${g.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${g.id}, 'grade')">Delete</button></td></tr>`).join(''); }
         function openGradeModal(id) { if(id) { const g=grades.find(x=>x.id==id); document.getElementById("gradeId").value=g.id; document.getElementById("gradeStudent").value=g.student; document.getElementById("gradeCourse").value=g.course; document.getElementById("gradeValue").value=g.grade; } else { document.getElementById("gradeId").value=""; document.getElementById("gradeStudent").value=""; document.getElementById("gradeCourse").value=""; document.getElementById("gradeValue").value=""; } new bootstrap.Modal(document.getElementById('gradeModal')).show(); }
         function saveGrade(e) { e.preventDefault(); const id = document.getElementById("gradeId").value; const data = { id: id?parseInt(id):Date.now(), student: document.getElementById("gradeStudent").value, course: document.getElementById("gradeCourse").value, grade: document.getElementById("gradeValue").value }; if(id) grades[grades.findIndex(x=>x.id==id)]=data; else grades.push(data); 
-            saveToStorage(); // SAVE
-            loadGrades(); bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide(); }
+            saveToStorage(); loadGrades(); bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
+            showNotification("Grade Saved Successfully!"); }
 
         function askDelete(id, type) { deleteId = id; deleteType = type; new bootstrap.Modal(document.getElementById('deleteModal')).show(); }
         function confirmDelete() {
@@ -236,8 +248,9 @@
             if(deleteType === 'classroom') classrooms = classrooms.filter(x => x.id !== deleteId);
             if(deleteType === 'grade') grades = grades.filter(x => x.id !== deleteId);
             
-            saveToStorage(); // SAVE
+            saveToStorage();
             showSection(deleteType + 's'); updateDashboard(); bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+            showNotification("Item Deleted! 🗑️");
         }
 
         updateDashboard();
