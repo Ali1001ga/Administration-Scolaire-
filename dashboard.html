@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .sidebar { height: 100vh; background-color: #343a40; color: white; min-height: 100vh; overflow-y: auto;}
+        .sidebar a { color: white; text-decoration: none; padding: 10px; display: block; }
+        .sidebar a:hover { background-color: #495057; }
+        .content-area { padding: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="d-flex">
+        <div class="sidebar p-3" style="width: 250px;">
+            <h3>My School</h3>
+            <hr>
+            <ul class="nav flex-column">
+                <li class="nav-item"><a href="#" onclick="showSection('dashboard')">📊 Dashboard</a></li>
+                <li class="nav-item"><a href="#" onclick="showSection('students')">🎓 Students</a></li>
+                <li class="nav-item"><a href="#" onclick="showSection('professors')">👨‍🏫 Professors</a></li>
+                <li class="nav-item"><a href="#" onclick="showSection('courses')">📚 Courses</a></li>
+                <li class="nav-item"><a href="#" onclick="showSection('classrooms')">🏫 Classrooms</a></li>
+                <li class="nav-item"><a href="#" onclick="showSection('grades')">📝 Grades</a></li>
+            </ul>
+        </div>
+
+        <div class="flex-grow-1">
+            <nav class="navbar navbar-light bg-light border-bottom px-3">
+                <span class="navbar-brand mb-0 h1">Admin Panel</span>
+                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">Log Out</button>
+            </nav>
+
+            <div class="content-area">
+                
+                <div id="dashboard-section">
+                    <h2>Dashboard Overview</h2>
+                    <div class="row mt-4">
+                        <div class="col-md-3"><div class="card p-3 bg-primary text-white"><h5>Students</h5><h3 id="dash-students">0</h3></div></div>
+                        <div class="col-md-3"><div class="card p-3 bg-success text-white"><h5>Professors</h5><h3 id="dash-profs">0</h3></div></div>
+                        <div class="col-md-3"><div class="card p-3 bg-warning text-dark"><h5>Courses</h5><h3 id="dash-courses">0</h3></div></div>
+                        <div class="col-md-3"><div class="card p-3 bg-info text-white"><h5>Classrooms</h5><h3 id="dash-rooms">0</h3></div></div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-md-6"><div class="card p-3"><h5>Students per Class</h5><div class="chart-container"><canvas id="barChart"></canvas></div></div></div>
+                        <div class="col-md-6"><div class="card p-3"><h5>Professors per Dept</h5><div class="chart-container"><canvas id="pieChart"></canvas></div></div></div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-md-4"><div class="card p-3"><h5>Student Grades</h5><div class="chart-container"><canvas id="lineChart"></canvas></div></div></div>
+                        <div class="col-md-4"><div class="card p-3"><h5>Course Prices</h5><div class="chart-container"><canvas id="doughnutChart"></canvas></div></div></div>
+                        <div class="col-md-4"><div class="card p-3"><h5>Room Capacity</h5><div class="chart-container"><canvas id="polarChart"></canvas></div></div></div>
+                    </div>
+                </div>
+
+                <div id="students-section" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h2>Manage Students</h2><button class="btn btn-primary" onclick="openStudentModal()">+ Add Student</button></div>
+                    <table class="table table-bordered table-striped"><thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Email</th><th>Class</th><th>Actions</th></tr></thead><tbody id="students-table-body"></tbody></table>
+                </div>
+
+                <div id="professors-section" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h2>Manage Professors</h2><button class="btn btn-primary" onclick="openProfessorModal()">+ Add Professor</button></div>
+                    <table class="table table-bordered table-striped"><thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Dept</th><th>Email</th><th>Actions</th></tr></thead><tbody id="professors-table-body"></tbody></table>
+                </div>
+
+                <div id="courses-section" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h2>Manage Courses</h2><button class="btn btn-primary" onclick="openCourseModal()">+ Add Course</button></div>
+                    <table class="table table-bordered table-striped"><thead class="table-dark"><tr><th>ID</th><th>Title</th><th>Duration</th><th>Price</th><th>Actions</th></tr></thead><tbody id="courses-table-body"></tbody></table>
+                </div>
+
+                <div id="classrooms-section" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h2>Manage Classrooms</h2><button class="btn btn-primary" onclick="openClassModal()">+ Add Classroom</button></div>
+                    <table class="table table-bordered table-striped"><thead class="table-dark"><tr><th>ID</th><th>Room Name</th><th>Capacity</th><th>Location</th><th>Actions</th></tr></thead><tbody id="classrooms-table-body"></tbody></table>
+                </div>
+
+                <div id="grades-section" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h2>Manage Grades</h2><button class="btn btn-primary" onclick="openGradeModal()">+ Add Grade</button></div>
+                    <table class="table table-bordered table-striped"><thead class="table-dark"><tr><th>ID</th><th>Student Name</th><th>Course</th><th>Grade (0-20)</th><th>Actions</th></tr></thead><tbody id="grades-table-body"></tbody></table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="logoutModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Logout</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body"><p>Are you sure you want to log out?</p></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="confirm-logout-btn" type="button" class="btn btn-danger" onclick="logoutWithDelay()">Yes, Log Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="studentModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="studentModalTitle">Add Student</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form onsubmit="saveStudent(event)"><input type="hidden" id="studentId"><div class="mb-3"><label>Name</label><input type="text" id="studentName" class="form-control" required></div><div class="mb-3"><label>Email</label><input type="email" id="studentEmail" class="form-control" required></div><div class="mb-3"><label>Class</label><input type="text" id="studentClass" class="form-control" required></div><button type="submit" class="btn btn-primary">Save</button></form></div></div></div></div>
+    <div class="modal fade" id="professorModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="profModalTitle">Add Professor</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form onsubmit="saveProfessor(event)"><input type="hidden" id="profId"><div class="mb-3"><label>Name</label><input type="text" id="profName" class="form-control" required></div><div class="mb-3"><label>Department</label><input type="text" id="profDept" class="form-control" required></div><div class="mb-3"><label>Email</label><input type="email" id="profEmail" class="form-control" required></div><button type="submit" class="btn btn-primary">Save</button></form></div></div></div></div>
+    <div class="modal fade" id="courseModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="courseModalTitle">Add Course</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form onsubmit="saveCourse(event)"><input type="hidden" id="courseId"><div class="mb-3"><label>Course Title</label><input type="text" id="courseTitle" class="form-control" required></div><div class="mb-3"><label>Duration</label><input type="text" id="courseDuration" class="form-control" required></div><div class="mb-3"><label>Price</label><input type="text" id="coursePrice" class="form-control" required></div><button type="submit" class="btn btn-primary">Save</button></form></div></div></div></div>
+    <div class="modal fade" id="classModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="classModalTitle">Add Classroom</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form onsubmit="saveClassroom(event)"><input type="hidden" id="classId"><div class="mb-3"><label>Room Name</label><input type="text" id="className" class="form-control" required></div><div class="mb-3"><label>Capacity</label><input type="number" id="classCapacity" class="form-control" required></div><div class="mb-3"><label>Location/Floor</label><input type="text" id="classLoc" class="form-control" required></div><button type="submit" class="btn btn-primary">Save</button></form></div></div></div></div>
+    <div class="modal fade" id="gradeModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="gradeModalTitle">Add Grade</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form onsubmit="saveGrade(event)"><input type="hidden" id="gradeId"><div class="mb-3"><label>Student Name</label><input type="text" id="gradeStudent" class="form-control" required></div><div class="mb-3"><label>Course</label><input type="text" id="gradeCourse" class="form-control" required></div><div class="mb-3"><label>Grade (0-20)</label><input type="number" id="gradeValue" class="form-control" min="0" max="20" required></div><button type="submit" class="btn btn-primary">Save</button></form></div></div></div></div>
+    <div class="modal fade" id="deleteModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Confirm Deletion</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Are you sure you want to delete this item?</p></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-danger" onclick="confirmDelete()">Yes, Delete</button></div></div></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- 1. LOCAL STORAGE & DATA INIT ---
+        // Helper to load data or use default
+        function initData(key, defaultData) {
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : defaultData;
+        }
+
+        // Helper to save all data
+        function saveToStorage() {
+            localStorage.setItem('students', JSON.stringify(students));
+            localStorage.setItem('professors', JSON.stringify(professors));
+            localStorage.setItem('courses', JSON.stringify(courses));
+            localStorage.setItem('classrooms', JSON.stringify(classrooms));
+            localStorage.setItem('grades', JSON.stringify(grades));
+        }
+
+        // Defaults (Mock Data)
+        const defaultStudents = [{ id: 1, name: "Alice", email: "alice@ex.com", class: "Math 101" }, { id: 2, name: "Bob", email: "bob@ex.com", class: "Science 202" }];
+        const defaultProfs = [{ id: 1, name: "Dr. Smith", dept: "Science", email: "smith@school.com" }, { id: 2, name: "Mrs. Jones", dept: "Math", email: "jones@school.com" }];
+        const defaultCourses = [{ id: 101, title: "Algebra", duration: "3 Months", price: "$200" }, { id: 102, title: "Physics", duration: "4 Months", price: "$250" }];
+        const defaultRooms = [{ id: 1, name: "Room A1", capacity: 30, location: "Floor 1" }, { id: 2, name: "Lab B2", capacity: 20, location: "Floor 2" }];
+        const defaultGrades = [{ id: 1, student: "Alice", course: "Algebra", grade: 18 }, { id: 2, student: "Bob", course: "Physics", grade: 15 }];
+
+        // Initialize variables from Storage OR Defaults
+        let students = initData('students', defaultStudents);
+        let professors = initData('professors', defaultProfs);
+        let courses = initData('courses', defaultCourses);
+        let classrooms = initData('classrooms', defaultRooms);
+        let grades = initData('grades', defaultGrades);
+
+        let deleteId = null; let deleteType = null;
+        let charts = {}; 
+
+        // --- 2. NAVIGATION ---
+        function showSection(sectionId) {
+            ['dashboard', 'students', 'professors', 'courses', 'classrooms', 'grades'].forEach(id => {
+                document.getElementById(id + '-section').style.display = 'none';
+            });
+            document.getElementById(sectionId + '-section').style.display = 'block';
+
+            if(sectionId === 'students') loadStudents();
+            if(sectionId === 'professors') loadProfessors();
+            if(sectionId === 'courses') loadCourses();
+            if(sectionId === 'classrooms') loadClassrooms();
+            if(sectionId === 'grades') loadGrades();
+            if(sectionId === 'dashboard') updateDashboard();
+        }
+
+        // --- 3. LOGOUT ---
+        function logoutWithDelay() {
+            const btn = document.getElementById("confirm-logout-btn");
+            btn.innerHTML = "Disconnecting... ⏳"; 
+            btn.disabled = true;
+            setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+        }
+
+        // --- 4. DASHBOARD & CHARTS ---
+        function updateDashboard() {
+            document.getElementById('dash-students').innerText = students.length;
+            document.getElementById('dash-profs').innerText = professors.length;
+            document.getElementById('dash-courses').innerText = courses.length;
+            document.getElementById('dash-rooms').innerText = classrooms.length;
+            renderCharts();
+        }
+
+        function renderCharts() {
+            ['barChart', 'pieChart', 'lineChart', 'doughnutChart', 'polarChart'].forEach(id => {
+                if(charts[id]) charts[id].destroy();
+            });
+
+            const classes = {}; students.forEach(s => { classes[s.class] = (classes[s.class] || 0) + 1; });
+            charts['barChart'] = new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: Object.keys(classes), datasets: [{ label: 'Students', data: Object.values(classes), backgroundColor: '#36a2eb' }] } });
+
+            const depts = {}; professors.forEach(p => { depts[p.dept] = (depts[p.dept] || 0) + 1; });
+            charts['pieChart'] = new Chart(document.getElementById('pieChart'), { type: 'pie', data: { labels: Object.keys(depts), datasets: [{ data: Object.values(depts), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56'] }] } });
+
+            charts['lineChart'] = new Chart(document.getElementById('lineChart'), { type: 'line', data: { labels: grades.map(g => g.student), datasets: [{ label: 'Grades', data: grades.map(g => g.grade), borderColor: '#4bc0c0', tension: 0.1 }] } });
+            
+            charts['doughnutChart'] = new Chart(document.getElementById('doughnutChart'), { type: 'doughnut', data: { labels: courses.map(c => c.title), datasets: [{ label: 'Price ($)', data: courses.map(c => parseInt(c.price.replace('$',''))), backgroundColor: ['#ff9f40', '#9966ff', '#ff6384'] }] } });
+            
+            charts['polarChart'] = new Chart(document.getElementById('polarChart'), { type: 'polarArea', data: { labels: classrooms.map(c => c.name), datasets: [{ label: 'Capacity', data: classrooms.map(c => c.capacity), backgroundColor: ['#4bc0c0', '#36a2eb', '#ffce56'] }] } });
+        }
+
+        // --- 5. CRUD FUNCTIONS (Now with Save to Storage) ---
+        function loadStudents() { document.getElementById("students-table-body").innerHTML = students.map(s => `<tr><td>${s.id}</td><td>${s.name}</td><td>${s.email}</td><td>${s.class}</td><td><button class="btn btn-sm btn-warning" onclick="openStudentModal(${s.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${s.id}, 'student')">Delete</button></td></tr>`).join(''); }
+        function openStudentModal(id) { if(id) { const s=students.find(x=>x.id==id); document.getElementById("studentId").value=s.id; document.getElementById("studentName").value=s.name; document.getElementById("studentEmail").value=s.email; document.getElementById("studentClass").value=s.class; } else { document.getElementById("studentId").value=""; document.getElementById("studentName").value=""; document.getElementById("studentEmail").value=""; document.getElementById("studentClass").value=""; } new bootstrap.Modal(document.getElementById('studentModal')).show(); }
+        function saveStudent(e) { e.preventDefault(); const id = document.getElementById("studentId").value; const data = { id: id?parseInt(id):Date.now(), name: document.getElementById("studentName").value, email: document.getElementById("studentEmail").value, class: document.getElementById("studentClass").value }; if(id) students[students.findIndex(x=>x.id==id)]=data; else students.push(data); 
+            saveToStorage(); // SAVE
+            loadStudents(); bootstrap.Modal.getInstance(document.getElementById('studentModal')).hide(); }
+
+        function loadProfessors() { document.getElementById("professors-table-body").innerHTML = professors.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.dept}</td><td>${p.email}</td><td><button class="btn btn-sm btn-warning" onclick="openProfessorModal(${p.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${p.id}, 'professor')">Delete</button></td></tr>`).join(''); }
+        function openProfessorModal(id) { if(id) { const p=professors.find(x=>x.id==id); document.getElementById("profId").value=p.id; document.getElementById("profName").value=p.name; document.getElementById("profDept").value=p.dept; document.getElementById("profEmail").value=p.email; } else { document.getElementById("profId").value=""; document.getElementById("profName").value=""; document.getElementById("profDept").value=""; document.getElementById("profEmail").value=""; } new bootstrap.Modal(document.getElementById('professorModal')).show(); }
+        function saveProfessor(e) { e.preventDefault(); const id = document.getElementById("profId").value; const data = { id: id?parseInt(id):Date.now(), name: document.getElementById("profName").value, dept: document.getElementById("profDept").value, email: document.getElementById("profEmail").value }; if(id) professors[professors.findIndex(x=>x.id==id)]=data; else professors.push(data); 
+            saveToStorage(); // SAVE
+            loadProfessors(); bootstrap.Modal.getInstance(document.getElementById('professorModal')).hide(); }
+
+        function loadCourses() { document.getElementById("courses-table-body").innerHTML = courses.map(c => `<tr><td>${c.id}</td><td>${c.title}</td><td>${c.duration}</td><td>${c.price}</td><td><button class="btn btn-sm btn-warning" onclick="openCourseModal(${c.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${c.id}, 'course')">Delete</button></td></tr>`).join(''); }
+        function openCourseModal(id) { if(id) { const c=courses.find(x=>x.id==id); document.getElementById("courseId").value=c.id; document.getElementById("courseTitle").value=c.title; document.getElementById("courseDuration").value=c.duration; document.getElementById("coursePrice").value=c.price; } else { document.getElementById("courseId").value=""; document.getElementById("courseTitle").value=""; document.getElementById("courseDuration").value=""; document.getElementById("coursePrice").value=""; } new bootstrap.Modal(document.getElementById('courseModal')).show(); }
+        function saveCourse(e) { e.preventDefault(); const id = document.getElementById("courseId").value; const data = { id: id?parseInt(id):Date.now(), title: document.getElementById("courseTitle").value, duration: document.getElementById("courseDuration").value, price: document.getElementById("coursePrice").value }; if(id) courses[courses.findIndex(x=>x.id==id)]=data; else courses.push(data); 
+            saveToStorage(); // SAVE
+            loadCourses(); bootstrap.Modal.getInstance(document.getElementById('courseModal')).hide(); }
+
+        function loadClassrooms() { document.getElementById("classrooms-table-body").innerHTML = classrooms.map(r => `<tr><td>${r.id}</td><td>${r.name}</td><td>${r.capacity}</td><td>${r.location}</td><td><button class="btn btn-sm btn-warning" onclick="openClassModal(${r.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${r.id}, 'classroom')">Delete</button></td></tr>`).join(''); }
+        function openClassModal(id) { if(id) { const r=classrooms.find(x=>x.id==id); document.getElementById("classId").value=r.id; document.getElementById("className").value=r.name; document.getElementById("classCapacity").value=r.capacity; document.getElementById("classLoc").value=r.location; } else { document.getElementById("classId").value=""; document.getElementById("className").value=""; document.getElementById("classCapacity").value=""; document.getElementById("classLoc").value=""; } new bootstrap.Modal(document.getElementById('classModal')).show(); }
+        function saveClassroom(e) { e.preventDefault(); const id = document.getElementById("classId").value; const data = { id: id?parseInt(id):Date.now(), name: document.getElementById("className").value, capacity: document.getElementById("classCapacity").value, location: document.getElementById("classLoc").value }; if(id) classrooms[classrooms.findIndex(x=>x.id==id)]=data; else classrooms.push(data); 
+            saveToStorage(); // SAVE
+            loadClassrooms(); bootstrap.Modal.getInstance(document.getElementById('classModal')).hide(); }
+
+        function loadGrades() { document.getElementById("grades-table-body").innerHTML = grades.map(g => `<tr><td>${g.id}</td><td>${g.student}</td><td>${g.course}</td><td>${g.grade}</td><td><button class="btn btn-sm btn-warning" onclick="openGradeModal(${g.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="askDelete(${g.id}, 'grade')">Delete</button></td></tr>`).join(''); }
+        function openGradeModal(id) { if(id) { const g=grades.find(x=>x.id==id); document.getElementById("gradeId").value=g.id; document.getElementById("gradeStudent").value=g.student; document.getElementById("gradeCourse").value=g.course; document.getElementById("gradeValue").value=g.grade; } else { document.getElementById("gradeId").value=""; document.getElementById("gradeStudent").value=""; document.getElementById("gradeCourse").value=""; document.getElementById("gradeValue").value=""; } new bootstrap.Modal(document.getElementById('gradeModal')).show(); }
+        function saveGrade(e) { e.preventDefault(); const id = document.getElementById("gradeId").value; const data = { id: id?parseInt(id):Date.now(), student: document.getElementById("gradeStudent").value, course: document.getElementById("gradeCourse").value, grade: document.getElementById("gradeValue").value }; if(id) grades[grades.findIndex(x=>x.id==id)]=data; else grades.push(data); 
+            saveToStorage(); // SAVE
+            loadGrades(); bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide(); }
+
+        function askDelete(id, type) { deleteId = id; deleteType = type; new bootstrap.Modal(document.getElementById('deleteModal')).show(); }
+        function confirmDelete() {
+            if(deleteType === 'student') students = students.filter(x => x.id !== deleteId);
+            if(deleteType === 'professor') professors = professors.filter(x => x.id !== deleteId);
+            if(deleteType === 'course') courses = courses.filter(x => x.id !== deleteId);
+            if(deleteType === 'classroom') classrooms = classrooms.filter(x => x.id !== deleteId);
+            if(deleteType === 'grade') grades = grades.filter(x => x.id !== deleteId);
+            
+            saveToStorage(); // SAVE
+            showSection(deleteType + 's'); updateDashboard(); bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+        }
+
+        updateDashboard();
+    </script>
+</body>
+</html>
